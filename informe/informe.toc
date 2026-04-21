@@ -1,0 +1,36 @@
+\contentsline {section}{\numberline {1}Ejercicio 1: Sistema de Control de un Rotor de Aspas}{2}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Modelo del sistema}{2}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Parte A — Análisis del Sistema}{2}{subsection.1.2}%
+\contentsline {subsubsection}{\numberline {1.2.1}A.a) Función de transferencia y variables de estado}{2}{subsubsection.1.2.1}%
+\contentsline {paragraph}{Variables de estado.}{3}{section*.3}%
+\contentsline {subsubsection}{\numberline {1.2.2}A.b) Márgenes de ganancia y fase}{3}{subsubsection.1.2.2}%
+\contentsline {subsubsection}{\numberline {1.2.3}A.c) Respuesta ante escalón con perturbación de carga}{4}{subsubsection.1.2.3}%
+\contentsline {subsubsection}{\numberline {1.2.4}A.d) Respuesta ante rampa con perturbación de carga}{5}{subsubsection.1.2.4}%
+\contentsline {subsubsection}{\numberline {1.2.5}A.e) Propuesta de controlador}{5}{subsubsection.1.2.5}%
+\contentsline {subsection}{\numberline {1.3}Parte B — Diseño del Sistema de Control}{6}{subsection.1.3}%
+\contentsline {subsubsection}{\numberline {1.3.1}B.a) Evaluación del sistema sin compensar}{6}{subsubsection.1.3.1}%
+\contentsline {subsubsection}{\numberline {1.3.2}B.b) Diseño del controlador por Root Locus}{7}{subsubsection.1.3.2}%
+\contentsline {paragraph}{Polo dominante deseado.}{7}{section*.12}%
+\contentsline {paragraph}{Contribución angular.}{7}{section*.13}%
+\contentsline {paragraph}{Ubicación del cero y polo.}{7}{section*.14}%
+\contentsline {paragraph}{Ajuste de ganancia.}{7}{section*.15}%
+\contentsline {paragraph}{¿Por qué el lead no puede cumplir la especificación de perturbación?}{8}{section*.19}%
+\contentsline {subsubsection}{\numberline {1.3.3}B.c) Márgenes de ganancia y fase — Comparación Bode}{9}{subsubsection.1.3.3}%
+\contentsline {subsubsection}{\numberline {1.3.4}B.d) Seguimiento de rampa}{10}{subsubsection.1.3.4}%
+\contentsline {subsubsection}{\numberline {1.3.5}B.e) Modificación del controlador para seguimiento de rampa}{10}{subsubsection.1.3.5}%
+\contentsline {paragraph}{Observación.}{11}{section*.25}%
+\contentsline {paragraph}{Justificación.}{11}{section*.26}%
+\contentsline {section}{\numberline {2}Ejercicio 2: Análisis y Control frente a Perturbaciones}{12}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Parte A — Análisis de Sensibilidad y Robustez}{12}{subsection.2.1}%
+\contentsline {subsubsection}{\numberline {2.1.1}A.a) Diagrama de Nyquist — Sistema nominal}{12}{subsubsection.2.1.1}%
+\contentsline {subsubsection}{\numberline {2.1.2}A.b) Simulación de falla}{13}{subsubsection.2.1.2}%
+\contentsline {subsubsection}{\numberline {2.1.3}A.c) Root Locus comparativo}{14}{subsubsection.2.1.3}%
+\contentsline {subsubsection}{\numberline {2.1.4}A.d) Propuesta de compensador}{14}{subsubsection.2.1.4}%
+\contentsline {subsection}{\numberline {2.2}Parte B — Diseño de Compensador para Estabilidad Robusta}{15}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}B.a) Diseño para MF = 35$^{\circ }$, 50$^{\circ }$, 65$^{\circ }$}{15}{subsubsection.2.2.1}%
+\contentsline {subsubsection}{\numberline {2.2.2}B.b) Verificación por Bode}{15}{subsubsection.2.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.3}B.c) Respuesta al escalón con falla}{16}{subsubsection.2.2.3}%
+\contentsline {subsubsection}{\numberline {2.2.4}B.d) Análisis de Nyquist y desventajas}{17}{subsubsection.2.2.4}%
+\contentsline {paragraph}{¿Cómo ``aleja'' el compensador la curva de $(-1,0)$?}{17}{section*.35}%
+\contentsline {paragraph}{Desventajas de incrementar el MF:}{17}{section*.36}%
+\contentsline {section}{\numberline {3}Conclusiones}{19}{section.3}%
