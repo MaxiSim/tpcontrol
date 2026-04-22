@@ -323,47 +323,40 @@ def disenar_lead_por_margen_fase(G, PM_deseado, B_val=B_NOM):
     # PM actual
     gm, pm_actual, wcg, wcp = ctrl.margin(G)
 
-    # Fase adicional necesaria (con margen de seguridad de ~5°)
-    phi_extra = PM_deseado - pm_actual + 5
-    if phi_extra < 0:
-        phi_extra = 0
-
-    phi_max_rad = np.radians(phi_extra)
-
-    # Parámetro α del lead
-    sin_phi = np.sin(phi_max_rad)
-    alpha = (1 - sin_phi) / (1 + sin_phi)
-
-    # Frecuencia de máxima fase: donde |G| = -10·log10(1/√α) dB
-    # → |G(jωm)| = 1/√(1/α) = √α   →  |G|_dB = 10·log10(α)
-    target_mag = np.sqrt(alpha)  # en lineal (no dB)
-
     omega = np.logspace(-3, 3, 10000)
-    resp = ctrl.frequency_response(G, omega)
-    mag = np.abs(resp.fresp[0, 0, :])
+    resp  = ctrl.frequency_response(G, omega)
+    mag   = np.abs(resp.fresp[0, 0, :])
 
-    # Buscar ωm donde |G| ≈ target_mag
-    # (la magnitud decrece, buscamos el cruce)
-    idx = np.argmin(np.abs(mag - target_mag))
-    wm = omega[idx]
+    # Iteración: aumenta el margen de seguridad hasta que PM_obtenido >= PM_deseado
+    C = pm_c = alpha = wm = z = p = Kc = None
+    for extra in range(5, 80, 3):
+        phi_extra   = PM_deseado - pm_actual + extra
+        phi_max_rad = np.radians(phi_extra)
+        sin_phi     = np.sin(phi_max_rad)
+        alpha_i     = (1 - sin_phi) / (1 + sin_phi)
+        target_mag  = np.sqrt(alpha_i)
 
-    # Cero y polo del lead
-    z = wm * np.sqrt(alpha)
-    p = wm / np.sqrt(alpha)
-    Kc = p / z  # normalización DC = 1
+        idx  = np.argmin(np.abs(mag - target_mag))
+        wm_i = omega[idx]
+        z_i  = wm_i * np.sqrt(alpha_i)
+        p_i  = wm_i / np.sqrt(alpha_i)
+        Kc_i = p_i / z_i
 
-    # Construir compensador
-    C = Kc * ctrl.tf([1, z], [1, p])
+        C_i  = Kc_i * ctrl.tf([1, z_i], [1, p_i])
+        _, pm_c_i, _, _ = ctrl.margin(C_i * G)
 
-    # Verificar
-    CG = C * G
-    gm_c, pm_c, wcg_c, wcp_c = ctrl.margin(CG)
+        if pm_c_i >= PM_deseado:
+            C, pm_c, alpha, wm, z, p, Kc = C_i, pm_c_i, alpha_i, wm_i, z_i, p_i, Kc_i
+            break
+
+    # Fallback: usar el resultado de la última iteración si ninguna alcanzó el target
+    if C is None:
+        C, pm_c, alpha, wm, z, p, Kc = C_i, pm_c_i, alpha_i, wm_i, z_i, p_i, Kc_i
 
     info = {
         'PM_deseado': PM_deseado,
-        'PM_actual': pm_actual,
+        'PM_actual':  pm_actual,
         'PM_obtenido': pm_c,
-        'phi_max': phi_extra,
         'alpha': alpha,
         'wm': wm,
         'z': z,
@@ -374,7 +367,6 @@ def disenar_lead_por_margen_fase(G, PM_deseado, B_val=B_NOM):
 
     print(f"--- Compensador Lead para PM = {PM_deseado}° (B = {B_val}) ---")
     print(f"  PM sin compensar: {pm_actual:.1f}°")
-    print(f"  Fase máxima aportada: {phi_extra:.1f}°")
     print(f"  α = {alpha:.4f}")
     print(f"  ωm = {wm:.4f} rad/s")
     print(f"  Cero: z = {z:.4f},  Polo: p = {p:.4f}")

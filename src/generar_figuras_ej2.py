@@ -99,6 +99,36 @@ def main():
         titulo='Nyquist del sistema nominal compensado')
     guardar(fig, 'ej2_nyquist_compensado.pdf')
 
+    # =========================================================================
+    # Generar valores numéricos para el informe LaTeX
+    # =========================================================================
+    from analisis import calcular_metricas_temporales as _met
+
+    def fmt(x, d=2):
+        v = float(x)
+        if not np.isfinite(v):
+            return r'\infty'
+        return f"{v:.{d}f}".replace('.', '{,}')
+
+    prefijos = ['TreintaCinco', 'Cincuenta', 'SesentaCinco']
+    val_path = os.path.join(os.path.dirname(__file__), '..', 'informe', 'valores_ej2.tex')
+    with open(val_path, 'w') as vf:
+        def w(cmd, val):
+            vf.write(rf'\def\{cmd}{{{val}}}' + '\n')
+        vf.write('% AUTO-GENERADO por generar_figuras_ej2.py — no editar a mano\n')
+        for pref, C, info in zip(prefijos, compensadores, infos):
+            _, pm_comp, _, wcp_comp = ctrl.margin(C * G_nom)
+            met = _met(G_nom, C, t_final=30)
+            w(f'PM{pref}Obt',   fmt(info['PM_obtenido'], 1))
+            w(f'PM{pref}Alpha', fmt(info['alpha'], 4))
+            w(f'PM{pref}Zcero', fmt(info['z'], 4))
+            w(f'PM{pref}Polo',  fmt(info['p'], 4))
+            w(f'PM{pref}Kc',    fmt(info['Kc'], 4))
+            w(f'PM{pref}Wcp',   fmt(wcp_comp))
+            w(f'PM{pref}Mp',    fmt(met['Mp'], 1))
+            w(f'PM{pref}Ts',    fmt(met['ts']))
+    print("  OK valores_ej2.tex")
+
     print(f"\nTodas las figuras Ej.2 generadas en {os.path.abspath(FIG_DIR)}")
     return compensadores, infos
 

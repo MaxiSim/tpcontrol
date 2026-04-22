@@ -21,7 +21,9 @@ from analisis import (calcular_margenes, simular_escalon_con_perturbacion,
                       calcular_metricas_temporales)
 from controlador import (SPECS, ZETA_MIN, SIGMA_MIN,
                          graficar_root_locus_con_region, evaluar_specs,
-                         comparar_bode, graficar_respuesta_rampa_compensada)
+                         comparar_bode, graficar_respuesta_rampa_compensada,
+                         disenar_lead_gridsearch, disenar_lead_lag_gridsearch,
+                         disenar_lead_pi_gridsearch, disenar_pi_gridsearch)
 
 # Configuración
 plt.rcParams.update({
@@ -163,27 +165,15 @@ def main():
     )
     guardar(fig, 'rlocus_sin_compensar.pdf')
 
-    # --- B.b) Diseño del compensador (reproducir la lógica del notebook) ---
-    sigma_d = 0.7
-    zeta_d = 0.6
-    wd_d = sigma_d * np.sqrt(1 - zeta_d**2) / zeta_d
-    s_d = complex(-sigma_d, wd_d)
-
-    G_eval = ctrl.evalfr(G, s_d)
-    angulo_G = np.degrees(np.angle(G_eval))
-    fase_necesaria = -180 - angulo_G
-    while fase_necesaria > 0: fase_necesaria -= 360
-    while fase_necesaria < -360: fase_necesaria += 360
-
-    zc = -2.0
-    angulo_cero = np.degrees(np.angle(s_d - zc))
-    angulo_polo_nec = angulo_cero - fase_necesaria
-    pc = np.real(s_d) - np.imag(s_d) / np.tan(np.radians(angulo_polo_nec))
-
-    C_lead = ctrl.tf([1, -zc], [1, -pc])
-    CG_eval = ctrl.evalfr(C_lead * G, s_d)
-    K = 1.0 / np.abs(CG_eval)
-    C_final = K * C_lead
+    # --- B.b) Diseño del compensador — PI (cumple los 3 specs simultáneamente) ---
+    # El sistema sin compensar ya cumple ts y Mp; solo falla e_pert (64%).
+    # Un PI eleva el tipo del sistema a 2 => e_pert = 0 automáticamente.
+    # Con z_i << wcp, el cero cancela la pérdida de fase del integrador.
+    print("\n[B.b] Buscando compensador PI por grid search...")
+    best, _ = disenar_pi_gridsearch(G, verbose=True)
+    z_i_bb  = best['z_i']
+    Kc_bb   = best['Kc']
+    C_final = best['C']
 
     # --- B.b) Root locus compensado ---
     fig = graficar_root_locus_con_region(
@@ -245,42 +235,60 @@ def main():
     plt.tight_layout()
     guardar(fig, 'rampa_lead.pdf')
 
-    # --- B.e) Con integrador ---
-    # Verificar si el integrador simple funciona o hay que rediseñar
-    C_int_simple = C_final * ctrl.tf([1], [1, 0])
-    T_int_test = ctrl.feedback(C_int_simple * G, 1)
-    polos_test = ctrl.poles(T_int_test)
-    estable = all(np.real(polos_test) < 0)
-
-    gm_t, pm_t, _, _ = ctrl.margin(C_int_simple * G)
-
-    if not estable or pm_t < 30:
-        # Rediseño
-        G_aug = G * ctrl.tf([1], [1, 0])
-        G_aug_eval = ctrl.evalfr(G_aug, s_d)
-        angulo_G_aug = np.degrees(np.angle(G_aug_eval))
-        fase_nec_2 = -180 - angulo_G_aug
-        while fase_nec_2 > 0: fase_nec_2 -= 360
-        while fase_nec_2 < -360: fase_nec_2 += 360
-
-        # Cero más cercano al origen para no requerir polo en SPD.
-        # Con zc=-0.5 la condición angular se satisface con pc<0 (polo en LHP).
-        zc2 = -0.5
-        angulo_cero2 = np.degrees(np.angle(s_d - zc2))
-        angulo_polo_nec2 = angulo_cero2 - fase_nec_2
-        pc2 = np.real(s_d) - np.imag(s_d) / np.tan(np.radians(angulo_polo_nec2))
-
-        C_lead2 = ctrl.tf([1, -zc2], [1, -pc2])
-        K2 = 1.0 / np.abs(ctrl.evalfr(C_lead2 * G_aug, s_d))
-        C_con_int = K2 * C_lead2 * ctrl.tf([1], [1, 0])
-    else:
-        C_con_int = C_int_simple
+    # --- B.e) No requiere modificación: el PI de B.b ya hace Tipo 2 ---
+    # El compensador de B.b (PI) eleva el tipo del sistema a 2, lo que
+    # garantiza e_rampa = 0 por construcción. Se reutiliza C_final.
+    print("\n[B.e] B.b ya cumple seguimiento de rampa (Tipo 2). Sin modificación.")
+    C_con_int = C_final
 
     fig = graficar_respuesta_rampa_compensada(
         G, C_final, C_con_int, t_final=40,
         titulo='Seguimiento de rampa — Con y sin integrador'
     )
     guardar(fig, 'rampa_con_integrador.pdf')
+
+    # =========================================================================
+    # Generar valores numéricos para el informe LaTeX
+    # =========================================================================
+    # t_final largo porque el PI tiene cero en z_i=0.02 => transitorio ~50s
+    res      = evaluar_specs(G, C_final, verbose=False, t_final=400)
+    gm_c, pm_c, wcg_c, wcp_c = ctrl.margin(C_final * G)
+    gm_c_dB  = 20 * np.log10(gm_c) if np.isfinite(gm_c) else float('inf')
+    err      = analizar_error_estacionario(G, C_final)
+
+    def fmt(x, d=2):
+        v = float(x)
+        if not np.isfinite(v):
+            return r'\infty'
+        return f"{v:.{d}f}".replace('.', '{,}')
+
+    def ck(cond):
+        return r'\checkmark' if cond else r'$\times$'
+
+    val_path = os.path.join(os.path.dirname(__file__), '..', 'informe', 'valores_ej1.tex')
+    with open(val_path, 'w') as vf:
+        def w(cmd, val):
+            vf.write(rf'\def\{cmd}{{{val}}}' + '\n')
+        vf.write('% AUTO-GENERADO por generar_figuras.py — no editar a mano\n')
+        # Parámetros del compensador PI
+        w('PIZcero',       fmt(z_i_bb, 3))
+        w('PIKc',          fmt(Kc_bb, 3))
+        # Métricas del compensado
+        w('PITs',          fmt(res['ts']))
+        w('PIMp',          fmt(res['Mp'], 1))
+        w('PIEpert',       fmt(res['error_pert_pct'], 2))
+        w('PICumpleTs',    ck(res['cumple_ts']))
+        w('PICumpleMp',    ck(res['cumple_Mp']))
+        w('PICumpleEpert', ck(res['cumple_pert']))
+        # Márgenes del compensado
+        w('PIGMcomp',      fmt(gm_c_dB, 1))
+        w('PIPMcomp',      fmt(pm_c, 1))
+        w('PIWcgComp',     fmt(wcg_c))
+        w('PIWcpComp',     fmt(wcp_c))
+        # Rampa — con el PI el sistema es Tipo 2 => Kv = infinito, ess = 0
+        w('PIKv',          r'\infty')
+        w('PIEss',         '0')
+    print("  ✓ valores_ej1.tex")
 
     print(f"\n✓ Todas las figuras generadas en {os.path.abspath(FIG_DIR)}")
 

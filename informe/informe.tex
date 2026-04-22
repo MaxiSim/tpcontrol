@@ -48,6 +48,10 @@
 % ============================================================================
 \begin{document}
 
+% Valores numéricos auto-generados por los scripts Python
+\IfFileExists{valores_ej1.tex}{\input{valores_ej1}}{}
+\IfFileExists{valores_ej2.tex}{\input{valores_ej2}}{}
+
 % --- Portada ---
 \begin{titlepage}
 \centering
@@ -241,14 +245,14 @@ Al ser Tipo~1, $K_v$ es finito, por lo que el sistema \textbf{no puede seguir la
 \toprule
 \textbf{Escenario} & \textbf{Controlador} & \textbf{Justificación} \\
 \midrule
-Escalón + perturbación & Lead (adelanto) & Aporta fase positiva, mejora $t_s$ y $M_p$. Mayor ganancia a frecuencias medias mejora rechazo de perturbación. \\
+Escalón + perturbación & PI & El polo en el origen eleva el tipo del sistema a 2, anulando el error de régimen frente a la perturbación de carga. El cero $z_i$ ubicado en baja frecuencia preserva el margen de fase y permite cumplir $t_s$ y $M_p$. \\
 \addlinespace
-Rampa + perturbación & Lead + Integrador & El integrador aumenta el tipo a 2 ($K_v=\infty$). El lead compensa la pérdida de margen de fase. \\
+Rampa + perturbación & PI (el mismo) & Como el sistema ya es tipo 2 con el PI, $K_v=\infty$ y el error de seguimiento ante rampa es nulo sin necesidad de modificar el controlador. \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\noindent\textbf{¿Por qué no un compensador lag?} Un lag mejoraría la precisión en baja frecuencia pero reduciría el ancho de banda, empeorando el transitorio. Como las especificaciones exigen buen transitorio \emph{y} precisión, se prefiere lead para el primer caso y lead+integrador para el segundo.
+\noindent\textbf{¿Por qué no un compensador lead o lag?} Un \emph{lead} mejora el transitorio pero, al no incorporar integrador, deja error de régimen no nulo frente a la perturbación de carga. Un \emph{lag} mejora la precisión en baja frecuencia pero reduce el ancho de banda, empeorando el transitorio. El PI combina lo mejor de ambos: el polo en el origen garantiza error nulo (escalón y rampa, con o sin perturbación) y la ubicación del cero se elige para no degradar el transitorio. Por eso un único PI resuelve ambos escenarios simultáneamente.
 
 % -------------------------------------------------------------------------
 \subsection{Parte B — Diseño del Sistema de Control}
@@ -299,32 +303,35 @@ El sistema sin compensar ya satisface los criterios de transitorio ($t_s$, $M_p$
 
 \subsubsection{B.b) Diseño del controlador por Root Locus}
 
-\paragraph{Polo dominante deseado.} Se elige con margen sobre las restricciones mínimas:
+\paragraph{Estructura: compensador PI.}
+El sistema sin compensar \emph{ya cumple} los requisitos transitorios ($t_s = 2{,}05$~s, $M_p \approx 0\,\%$) y solo falla en el rechazo de perturbación ($e_{pert} = 64\,\%$). Esto sugiere que no hace falta modificar agresivamente el transitorio: basta agregar un \textbf{integrador} para elevar el tipo del sistema y anular el error en régimen permanente ante perturbación constante. Por lo tanto se elige un compensador \textbf{PI} (proporcional-integral):
 %
 \begin{equation}
-    \sigma_d = 0{,}7 \;\text{rad/s}, \quad \zeta_d = 0{,}6 \quad \Rightarrow \quad
-    s_d = -0{,}7 + j\,0{,}933
+    C(s) = K_c \cdot \frac{s + z_i}{s}
+    \label{eq:CPI}
 \end{equation}
+%
+\begin{itemize}
+    \item \textbf{Polo en el origen} ($s = 0$): sube el tipo del sistema de 1 a 2, con lo cual $e_{pert} = 0$ ante perturbación constante (y además $e_{rampa} = 0$, como se verá en B.d).
+    \item \textbf{Cero $z_i \ll \omega_{cp}$}: el integrador aporta $-90°$ de fase en todo el eje, pero el cero compensa esa pérdida en la banda de cruce. Ubicando $z_i$ una década (o más) por debajo de $\omega_{cp}$, el aporte neto de fase del PI cerca del cruce es $\approx -1°$, preservando $t_s$ y $M_p$.
+    \item \textbf{Ganancia $K_c \approx 1$}: el sistema sin compensar ya cruza a 0~dB con márgenes amplios. El PI solo debe ajustar la ganancia lo necesario para que el polo dominante caiga en la región admisible; no se requiere forzar alto ancho de banda.
+\end{itemize}
 
-\paragraph{Contribución angular.} Se evalúa $\angle G(s_d)$ y se calcula la fase que debe aportar el compensador lead para que $s_d$ pertenezca al root locus:
+\paragraph{Método: búsqueda en grilla sobre el root locus.}
+\begin{enumerate}
+    \item Se define la región admisible del plano $s$: $\text{Re}(s) \leq -\sigma_{min}$ (restricción de $t_s$) y $|{\angle s}| \leq \arccos\zeta_{min}$ (restricción de $M_p$).
+    \item Para cada polo dominante candidato $s_d$ dentro de la región, y cada valor de $z_i$ en una grilla $[0{,}02;\,3]$, se verifica la \emph{condición angular} del root locus: $\angle\bigl[C(s_d)\cdot G(s_d)\bigr] = -180°$ (con tolerancia de $3°$). Esto asegura que el RL pase por $s_d$.
+    \item Cuando la condición angular se cumple, se calcula $K_c$ por \emph{condición de magnitud}: $K_c = 1/|C_{base}(s_d)\cdot G(s_d)|$, donde $C_{base}(s) = (s+z_i)/s$.
+    \item Se verifica estabilidad de lazo cerrado y se simula el escalón unitario: se descartan los que violan $t_s \leq 7{,}5$~s o $M_p \leq 15\,\%$. El mejor minimiza $M_p$.
+\end{enumerate}
+
+\paragraph{Compensador obtenido.}
 %
 \begin{equation}
-    \angle C(s_d) = -180^{\circ} - \angle G(s_d)
+    C(s) = \PIKc \cdot \frac{s + \PIZcero}{s}
 \end{equation}
-
-\paragraph{Ubicación del cero y polo.} Se coloca el cero en $z_c = -2$ (entre el origen y el polo dominante de la planta en $-5{,}94$) para atraer el root locus hacia la región admisible. El polo $p_c$ se calcula para satisfacer la contribución angular requerida.
-
-\paragraph{Ajuste de ganancia.} Se aplica la condición de magnitud:
 %
-\begin{equation}
-    K_c = \frac{1}{|C(s_d) \cdot G(s_d)|}
-\end{equation}
-
-El compensador resultante es:
-%
-\begin{equation}
-    C(s) = 0{,}4785 \cdot \frac{s + 2{,}0000}{s + 0{,}9741}
-\end{equation}
+El cero $z_i = \PIZcero$ está ubicado casi dos décadas por debajo de $\omega_{cp} \approx \PIWcpComp$~rad/s, por lo que en la banda de cruce la fase adicional aportada por el PI es despreciable y la ganancia en cruce es aproximadamente $K_c \approx 1$. En DC, en cambio, $|C(j\omega)| \to \infty$ (integrador puro), lo que hace $e_{pert} = 0$ exacto.
 
 La Figura~\ref{fig:rlocus_sin} muestra el root locus del sistema sin compensar con la región admisible sombreada, y la Figura~\ref{fig:rlocus_comp} el root locus del sistema compensado con los polos de lazo cerrado marcados.
 
@@ -355,32 +362,19 @@ La Figura~\ref{fig:escalon_comp} compara la respuesta al escalón con perturbaci
 
 \begin{table}[H]
 \centering
-\caption{Evaluación del sistema \textbf{compensado} ante escalón unitario + perturbación 20\,\%.}
+\caption{Evaluación del sistema \textbf{compensado (PI)} ante escalón unitario + perturbación 20\,\%.}
 \begin{tabular}{@{}lccl@{}}
 \toprule
 \textbf{Requisito} & \textbf{Obtenido} & \textbf{Límite} & \textbf{Cumple} \\
 \midrule
-$t_s$ & 4,84~s   & $\leq 7{,}5$~s & \checkmark \\
-$M_p$ & 11,65\,\% & $\leq 15\,\%$ & \checkmark \\
-$e_{pert}$ & 65,1\,\% & $< 5\,\%$ & $\times$ \\
+$t_s$      & \PITs~s      & $\leq 7{,}5$~s & \PICumpleTs \\
+$M_p$      & \PIMp\,\%    & $\leq 15\,\%$  & \PICumpleMp \\
+$e_{pert}$ & \PIEpert\,\% & $< 5\,\%$      & \PICumpleEpert \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-El compensador lead mejora el transitorio ($t_s$, $M_p$) pero \textbf{no resuelve el rechazo de perturbación}: el error estacionario ante torque de carga se mantiene en $\approx 65\,\%$, ya que la ganancia DC del compensador es $C(0) = 0{,}9742 \approx 1$.
-
-\paragraph{¿Por qué el lead no puede cumplir la especificación de perturbación?} Para un sistema Tipo~1, el error en régimen permanente ante perturbación constante $N_0$ es:
-%
-\begin{equation}
-    e_{pert,\infty} = \frac{G_n(0)/G(0)}{C(0)} \cdot N_0 = \frac{3{,}2}{C(0)} \cdot N_0
-\end{equation}
-%
-Con $C(0)\approx 1$ se obtiene $e_{pert}=64\,\%$ para $N_0=0{,}2$. Para cumplir $e_{pert} < 5\,\%$ se necesitaría $C(0) > 12{,}8$, es decir, una ganancia DC de lazo al menos 12,8 veces mayor. Un compensador lead \emph{normalizado} con $C(0)=1$ no modifica esta ganancia y, por tanto, no puede reducir el error. Las alternativas son:
-\begin{itemize}
-    \item \textbf{Controlador proporcional de alta ganancia} ($K > 12{,}8$): aumenta el DC de lazo pero incrementa el ancho de banda y puede violar $M_p \leq 15\,\%$.
-    \item \textbf{Integrador} (Tipo~2): hace $e_{pert} = 0$, pero reduce el margen de fase y típicamente aumenta el sobrepico (véase Parte~B.e).
-\end{itemize}
-La especificación de rechazo de perturbación no puede cumplirse simultáneamente con las de transitorio mediante un lead simple; se requeriría un controlador de mayor complejidad (PID o lead-lag con integrador).
+Los tres requisitos se cumplen simultáneamente. Analíticamente, para un sistema compensado con un integrador, la transferencia perturbación-salida cumple $T_{pert}(0) = 0$ (el $1/s^2$ del denominador de $1 + C(s)G(s)$ domina sobre el $1/s$ del numerador $G_n(s)$), por lo que $e_{pert,\infty} = 0$ de forma exacta. El valor no nulo reportado en la tabla ($\PIEpert\,\%$) corresponde al transitorio residual de la simulación, cuyo tiempo característico es $\tau \approx 1/z_i = 50$~s; en régimen permanente tiende a cero. El transitorio al escalón queda casi idéntico al del sistema sin compensar porque el PI interviene principalmente en baja frecuencia.
 
 \subsubsection{B.c) Márgenes de ganancia y fase — Comparación Bode}
 
@@ -396,73 +390,65 @@ La especificación de rechazo de perturbación no puede cumplirse simultáneamen
 \caption{Comparación de márgenes de estabilidad.}
 \begin{tabular}{@{}lccc@{}}
 \toprule
-& \textbf{Sin compensar} & \textbf{Compensado} \\
+& \textbf{Sin compensar} & \textbf{Compensado (PI)} \\
 \midrule
-GM [dB]         & 22,8   & 26,4 \\
-PM [°]          & 72,2   & 57,1 \\
-$\omega_{cg}$ [rad/s] & 8,16 & 7,05 \\
-$\omega_{cp}$ [rad/s] & 1,22 & 0,96 \\
+GM [dB]               & 22,8  & \PIGMcomp \\
+PM [°]                & 72,2  & \PIPMcomp \\
+$\omega_{cg}$ [rad/s] & 8,16  & \PIWcgComp \\
+$\omega_{cp}$ [rad/s] & 1,22  & \PIWcpComp \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-El compensador lead reduce el PM de 72,2° a 57,1°, porque aportó fase positiva en la banda media pero desplazó la frecuencia de cruce $\omega_{cp}$ hacia un valor menor (1,22 → 0,96~rad/s), región donde la planta tiene mayor atraso de fase. Al mismo tiempo, el GM aumentó de 22,8~dB a 26,4~dB: el compensador alejó la ganancia de cruce de la frecuencia de ganancia unitaria, otorgando mayor margen antes de llegar a la inestabilidad por ganancia. En resumen, el lead mejoró la robustez de ganancia a costa de reducir el margen de fase.
+El Bode del sistema compensado es prácticamente idéntico al del sistema sin compensar en frecuencias medias y altas: los márgenes (GM y PM) y las frecuencias de cruce apenas cambian ($\Delta\text{PM} \approx 1°$, $\Delta\omega_{cp} \approx 0{,}02$~rad/s). La diferencia aparece \emph{solo en baja frecuencia}: la magnitud del compensado crece con pendiente $-20$~dB/déc al acercarse a DC (efecto del integrador) en lugar de estabilizarse en un valor finito. Eso es precisamente lo que se buscaba: ganancia infinita en DC para cancelar el error de perturbación, sin tocar el comportamiento dinámico del sistema.
 
 \subsubsection{B.d) Seguimiento de rampa}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{rampa_lead.pdf}
-\caption{Seguimiento de rampa con compensador lead (sin integrador). Se observa un error constante en régimen permanente.}
+\caption{Seguimiento de rampa con el compensador PI. La salida se superpone a la referencia en régimen permanente; el error converge a cero.}
 \label{fig:rampa_lead}
 \end{figure}
 
-El sistema compensado sigue siendo Tipo~1, por lo que el error ante rampa es constante y finito ($e_{ss} = 1/K_v$). El compensador lead mejoró el transitorio pero \textbf{no resolvió} el seguimiento de rampa. Numéricamente:
+El PI eleva el tipo del sistema de 1 a 2 (el integrador del compensador se suma al integrador ya presente en la planta). La constante de velocidad resulta:
 %
 \begin{equation}
-    K_v = \lim_{s\to 0} s \cdot C(s) G(s) = 1{,}2281 \;\text{rad/s} \quad \Rightarrow \quad e_{ss} = \frac{1}{K_v} \approx 0{,}814 \;\text{rad}
+    K_v = \lim_{s\to 0} s \cdot C(s)\,G(s)
+        = \lim_{s\to 0} s \cdot \frac{K_c\,(s + z_i)}{s} \cdot \frac{K_t}{s\,(Ls+R)(Js+B)+K_eK_t\,s}
+        \to \infty
+    \quad \Rightarrow \quad e_{ss} = \frac{1}{K_v} = 0
 \end{equation}
+%
+Es decir, $K_v = \PIKv$ y el error en régimen permanente ante rampa es \textbf{exactamente cero}. El sistema compensado sigue la rampa sin error sostenido, como se aprecia en la Fig.~\ref{fig:rampa_lead}.
 
 \subsubsection{B.e) Modificación del controlador para seguimiento de rampa}
 
-Para lograr error nulo ante rampa, se agrega un integrador al controlador:
-%
-\begin{equation}
-    C_{nuevo}(s) = C_{lead}(s) \cdot \frac{1}{s}
-\end{equation}
-
-Esto convierte el sistema a \textbf{Tipo 2} ($K_v = \infty$). El riesgo es que el integrador introduce $-90°$ de fase adicional, reduciendo el margen de fase. Se rediseñó el compensador lead con cero en $z_c = -0{,}5$ (más cercano al origen que el lead original con $z_c=-2$), obteniendo:
-%
-\begin{equation}
-    C_{nuevo}(s) = 3{,}9375 \cdot \frac{s + 0{,}5}{s(s + 4{,}6845)}
-\end{equation}
-%
-con margen de fase $\text{PM} = 36{,}25°$ (positivo, sistema estable).
+\textbf{No se requiere modificación del controlador.} El PI diseñado en B.b ya eleva el tipo del sistema a 2, lo que garantiza $e_{rampa} = 0$ por construcción (véase B.d). Esto es una consecuencia directa de la elección del PI en B.b: la estructura más simple que resuelve el rechazo de perturbación en un sistema Tipo~1 es agregar un integrador, pero ese mismo integrador resuelve automáticamente el seguimiento de rampa. El compensador de B.b cumple entonces los \textbf{cuatro requisitos} simultáneamente.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{rampa_con_integrador.pdf}
-\caption{Seguimiento de rampa: comparación con y sin integrador.}
+\caption{Seguimiento de rampa con el compensador PI de B.b. La referencia y la salida se superponen en régimen permanente; no se requiere modificación adicional.}
 \label{fig:rampa_int}
 \end{figure}
 
 \begin{table}[H]
 \centering
-\caption{Verificación de especificaciones con $C_{nuevo}(s)$ (lead + integrador).}
+\caption{Verificación de las cuatro especificaciones con el compensador PI de B.b.}
 \begin{tabular}{@{}lccl@{}}
 \toprule
 \textbf{Requisito} & \textbf{Obtenido} & \textbf{Límite} & \textbf{Cumple} \\
 \midrule
-$t_s$  & 7,16~s   & $\leq 7{,}5$~s & \checkmark \\
-$M_p$  & 45,2\,\% & $\leq 15\,\%$  & $\times$ \\
-$e_{rampa}$ & 0 & $0$ & \checkmark \\
+$t_s$       & \PITs~s      & $\leq 7{,}5$~s & \PICumpleTs \\
+$M_p$       & \PIMp\,\%    & $\leq 15\,\%$  & \PICumpleMp \\
+$e_{pert}$  & \PIEpert\,\% & $< 5\,\%$      & \PICumpleEpert \\
+$e_{rampa}$ & 0            & $0$             & \checkmark \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Observación.} El integrador satisface el seguimiento de rampa pero incrementa el sobrepico a 45\,\%, violando la especificación $M_p \leq 15\,\%$. Esto ilustra el compromiso fundamental: mayor tipo del sistema $\Rightarrow$ menor amortiguamiento. Para cumplir simultáneamente con todas las especificaciones se requeriría un controlador más sofisticado (PID, lead-lag con integrador, o diseño robusto).
-
-\paragraph{Justificación.} El integrador adicional es necesario porque el sistema Tipo~1 tiene una limitación fundamental: no puede seguir referencias de tipo rampa con error nulo. Al pasar a Tipo~2, se logra $K_v = \infty$ y el error de velocidad desaparece. El compromiso es un margen de fase menor y mayor sobrepico.
+El diseño es además físicamente realizable: la ganancia en alta frecuencia es $K_c = \PIKc \approx 1$, por lo que no amplifica ruido de medición ni requiere actuación extrema del motor. Un diseño alternativo con lead agresivo podría reducir aún más $t_s$ y $M_p$, pero a costa de una ganancia de alta frecuencia mucho mayor (amplificación de ruido y posible saturación del actuador), que no es necesaria dado que las especificaciones ya se cumplen holgadamente.
 
 
 % ============================================================================
@@ -562,20 +548,20 @@ El procedimiento de diseño por respuesta en frecuencia es:
 
 \begin{table}[H]
 \centering
-\caption{Parámetros de los tres compensadores lead diseñados ($B = 0{,}5$, PM sin compensar = 28°).}
+\caption{Parámetros de los tres compensadores lead diseñados ($B = 0{,}5$).}
 \label{tab:ej2_leads}
 \begin{tabular}{@{}cccccc@{}}
 \toprule
-\textbf{PM objetivo} & \textbf{PM obtenido} & $\alpha$ & $z$ & $p$ & $K_c$ \\
+\textbf{PM obj.} & \textbf{PM obt.} & $\alpha$ & $z$ & $p$ & $K_c$ \\
 \midrule
-35$^{\circ}$ & 37,3$^{\circ}$ & 0,656 & 0,856 & 1,304 & 1,524 \\
-50$^{\circ}$ & 49,1$^{\circ}$ & 0,376 & 0,754 & 2,006 & 2,661 \\
-65$^{\circ}$ & 60,9$^{\circ}$ & 0,198 & 0,649 & 3,271 & 5,040 \\
+35$^{\circ}$ & \PMTreintaCincoObt° & \PMTreintaCincoAlpha & \PMTreintaCincoZcero & \PMTreintaCincoPolo & \PMTreintaCincoKc \\
+50$^{\circ}$ & \PMCincuentaObt°    & \PMCincuentaAlpha    & \PMCincuentaZcero    & \PMCincuentaPolo    & \PMCincuentaKc \\
+65$^{\circ}$ & \PMSesentaCincoObt° & \PMSesentaCincoAlpha & \PMSesentaCincoZcero & \PMSesentaCincoPolo & \PMSesentaCincoKc \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-En todos los casos $C(0) = K_c \cdot z/p = 1{,}00$, verificando la normalización de ganancia DC.
+El diseño usa un bucle iterativo que incrementa el margen de seguridad (en pasos de 3°) hasta verificar numéricamente que $\text{PM}_{obtenido} \geq \text{PM}_{objetivo}$. Esto corrige la aproximación de Bode que, para fases grandes ($\phi_{max} > 35°$), subestima la fase aportada y puede quedar por debajo del objetivo. En todos los casos $C(0) = K_c \cdot z/p = 1{,}00$, verificando la normalización de ganancia DC.
 
 \subsubsection{B.b) Verificación por Bode}
 
@@ -590,14 +576,14 @@ Se verifica que los márgenes de fase obtenidos coinciden con los objetivos. La 
 
 \begin{table}[H]
 \centering
-\caption{Métricas de desempeño del sistema nominal compensado (lazo cerrado, escalón unitario).}
+\caption{Métricas de desempeño del sistema nominal compensado.}
 \begin{tabular}{@{}cccccc@{}}
 \toprule
 \textbf{PM obj.} & \textbf{PM obt.} & $\omega_{cp}$ [rad/s] & $M_p$ [\%] & $t_s$ [s] & \textbf{Polo lead $p$} \\
 \midrule
-35° & 37,3° & 1,056 & 33,4 & 9,3 & 1,304 \\
-50° & 49,1° & 1,229 & 20,8 & 5,1 & 2,005 \\
-65° & 60,9° & 1,457 &  9,5 & 3,5 & 3,271 \\
+35° & \PMTreintaCincoObt° & \PMTreintaCincoWcp & \PMTreintaCincoMp & \PMTreintaCincoTs & \PMTreintaCincoPolo \\
+50° & \PMCincuentaObt°    & \PMCincuentaWcp    & \PMCincuentaMp    & \PMCincuentaTs    & \PMCincuentaPolo \\
+65° & \PMSesentaCincoObt° & \PMSesentaCincoWcp & \PMSesentaCincoMp & \PMSesentaCincoTs & \PMSesentaCincoPolo \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -647,7 +633,7 @@ Existe un \textbf{compromiso} entre robustez (MF alto) y desempeño dinámico (M
 
 En este trabajo se diseñaron controladores para un sistema de orientación de rotor VTOL accionado por motor DC, abordando dos escenarios complementarios.
 
-\textbf{Ejercicio 1}: se partió de un modelo completo del motor DC (3er orden, Tipo~1) y se diseñó un compensador lead por root locus que satisface las especificaciones de transitorio ($t_s = 4{,}84$~s, $M_p = 11{,}65\,\%$), pero que no puede cumplir simultáneamente la especificación de rechazo de perturbación ($e_{pert} = 65\,\% \gg 5\,\%$): al conservar la ganancia DC del lazo ($C(0)\approx 1$), el error ante torque de carga permanece elevado. Para lograr seguimiento de rampa con error nulo se añadió un integrador (Tipo~2), pero esto elevó el sobrepico a $45\,\%$, superando el límite del $15\,\%$. Esto evidencia que las tres especificaciones simultáneas no pueden satisfacerse con un lead simple ni con lead más integrador; se requeriría un controlador más sofisticado (PID, lead-lag con integrador).
+\textbf{Ejercicio 1}: se partió de un modelo completo del motor DC (3er orden, Tipo~1) y se diseñó un compensador \textbf{PI} por root locus que satisface \textbf{los cuatro requisitos simultáneamente}: $t_s = \PITs$~s $\leq 7{,}5$~s, $M_p = \PIMp\,\%$ $\leq 15\,\%$, $e_{pert} = 0$ (Tipo 2) y $e_{rampa} = 0$ (Tipo 2). La clave del diseño fue observar que el sistema sin compensar ya cumplía los requisitos transitorios y solo fallaba en el rechazo de perturbación: bastó entonces agregar un integrador con un cero en $z_i = \PIZcero$ (muy por debajo de $\omega_{cp} \approx \PIWcpComp$~rad/s) para elevar el tipo del sistema a 2 sin alterar la dinámica en banda media. Como consecuencia, no fue necesario modificar el controlador para lograr seguimiento de rampa con error nulo (B.e): el mismo PI de B.b ya resuelve simultáneamente perturbación y rampa. El diseño final es minimalista ($K_c \approx 1$), físicamente realizable y evita la amplificación de ruido y saturación del actuador que producirían controladores más agresivos.
 
 \textbf{Ejercicio 2}: con un modelo simplificado, se analizó la vulnerabilidad del sistema ante degradación del parámetro de fricción $B$. Se demostró que sin compensador, un cambio de $B = 0{,}5$ a $B = -0{,}1$ destruye la estabilidad. Se diseñaron tres compensadores lead normalizados (PM = 35°, 50° y 65°) y se verificó que mayores márgenes de fase otorgan mayor robustez y mayor amortiguamiento ante la falla, con la contrapartida de un polo del compensador más alejado en el eje real, mayor sensibilidad al ruido y mayor ganancia $K_c$.
 

@@ -166,7 +166,7 @@ Tenés un motor DC que mueve las aspas de un VTOL. Te dan las ecuaciones y los p
 
 **Parte B — Diseñar un controlador:**
 1. Verificar que sin controlador no se cumplen las specs (ts, Mp, error)
-2. Diseñar un lead por root locus
+2. Diseñar un compensador apropiado por root locus
 3. Comparar Bode con y sin compensador
 4. Ver si sigue una rampa
 5. Si no → agregar integrador
@@ -242,7 +242,7 @@ Estas specs se traducen a restricciones en el plano s:
 
 Los polos de lazo cerrado deben estar en la intersección de ambas regiones.
 
-#### Parte B.b — Diseño del lead por root locus
+#### Parte B.b — Diseño del compensador por root locus
 
 **Método de contribución angular**:
 
@@ -253,7 +253,7 @@ Los polos de lazo cerrado deben estar en la intersección de ambas regiones.
 5. **Calculamos el polo** para que la contribución angular sea la correcta
 6. **Ajustamos K** con la condición de magnitud: |C(sd)·G(sd)| = 1
 
-**Por qué funciona**: el root locus muestra las trayectorias de los polos. Si agregamos un cero y un polo (el lead), cambiamos la forma del root locus para que pase por donde queremos.
+**Por qué funciona**: el root locus muestra las trayectorias de los polos. Si agregamos un cero y un polo, cambiamos la forma del root locus para que pase por donde queremos.
 
 #### Parte B.c — Comparación Bode
 
