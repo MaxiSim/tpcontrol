@@ -74,9 +74,6 @@ Máximo Simian\\
 
 \end{titlepage}
 
-\tableofcontents
-\newpage
-
 % ============================================================================
 % EJERCICIO 1
 % ============================================================================
@@ -160,7 +157,7 @@ La Figura~\ref{fig:bode_planta} muestra el diagrama de Bode de $G(s)$ a lazo abi
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{bode_planta.pdf}
+\includegraphics[width=0.68\textwidth]{bode_planta.pdf}
 \caption{Diagrama de Bode de $G(s)$ con indicación de márgenes de estabilidad.}
 \label{fig:bode_planta}
 \end{figure}
@@ -204,7 +201,7 @@ La Figura~\ref{fig:escalon_pert} muestra la respuesta del sistema ante un escal�
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{escalon_perturbacion.pdf}
+\includegraphics[width=0.68\textwidth]{escalon_perturbacion.pdf}
 \caption{Respuesta ante escalón unitario + perturbación de carga (0,1). Se muestra la salida total y las componentes individuales por superposición.}
 \label{fig:escalon_pert}
 \end{figure}
@@ -224,7 +221,7 @@ Al ser Tipo~1, $K_v$ es finito, por lo que el sistema \textbf{no puede seguir la
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{rampa_perturbacion.pdf}
+\includegraphics[width=0.68\textwidth]{rampa_perturbacion.pdf}
 \caption{Respuesta ante rampa unitaria + perturbación de carga (0,1). El error de seguimiento converge a un valor constante $1/K_v$.}
 \label{fig:rampa_pert}
 \end{figure}
@@ -246,7 +243,7 @@ Rampa + perturbación & PI (el mismo) & Como el sistema ya es tipo 2 con el PI, 
 \end{tabular}
 \end{table}
 
-\noindent\textbf{¿Por qué no un compensador lead o lag?} Un \emph{lead} mejora el transitorio pero, al no incorporar integrador, deja error de régimen no nulo frente a la perturbación de carga. Un \emph{lag} mejora la precisión en baja frecuencia pero reduce el ancho de banda, empeorando el transitorio. El PI combina lo mejor de ambos: el polo en el origen garantiza error nulo (escalón y rampa, con o sin perturbación) y la ubicación del cero se elige para no degradar el transitorio. Por eso un único PI resuelve ambos escenarios simultáneamente.
+\noindent ¿Por qué no un compensador lead o lag? Un \emph{lead} mejora el transitorio pero, al no incorporar integrador, deja error de régimen no nulo frente a la perturbación de carga. Un \emph{lag} mejora la precisión en baja frecuencia pero reduce el ancho de banda, empeorando el transitorio. El PI combina lo mejor de ambos: el polo en el origen garantiza error nulo (escalón y rampa, con o sin perturbación) y la ubicación del cero se elige para no degradar el transitorio. Por eso un único PI resuelve ambos escenarios simultáneamente.
 
 % -------------------------------------------------------------------------
 \subsection{Parte B — Diseño del Sistema de Control}
@@ -274,7 +271,7 @@ La Figura~\ref{fig:escalon_sin} muestra la respuesta del sistema sin compensar (
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{escalon_sin_compensar.pdf}
+\includegraphics[width=0.68\textwidth]{escalon_sin_compensar.pdf}
 \caption{Respuesta al escalón del sistema sin compensar, con banda del 2\% y $t_{s,max}$.}
 \label{fig:escalon_sin}
 \end{figure}
@@ -332,13 +329,13 @@ La Figura~\ref{fig:rlocus_sin} muestra el root locus del sistema sin compensar c
 \begin{figure}[H]
 \centering
 \begin{subfigure}[t]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{rlocus_sin_compensar.pdf}
+    \includegraphics[width=0.8\textwidth]{rlocus_sin_compensar.pdf}
     \caption{Sin compensar.}
     \label{fig:rlocus_sin}
 \end{subfigure}
 \hfill
 \begin{subfigure}[t]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{rlocus_compensado.pdf}
+    \includegraphics[width=0.8\textwidth]{rlocus_compensado.pdf}
     \caption{Compensado (estrellas = polos LC).}
     \label{fig:rlocus_comp}
 \end{subfigure}
@@ -349,7 +346,7 @@ La Figura~\ref{fig:escalon_comp} compara la respuesta al escalón con perturbaci
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{escalon_comp_vs_sin.pdf}
+\includegraphics[width=0.68\textwidth]{escalon_comp_vs_sin.pdf}
 \caption{Respuesta al escalón + perturbación (0,2): compensado vs sin compensar.}
 \label{fig:escalon_comp}
 \end{figure}
@@ -374,7 +371,7 @@ Los tres requisitos se cumplen simultáneamente. Analíticamente, para un sistem
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{bode_comparativo.pdf}
+\includegraphics[width=0.68\textwidth]{bode_comparativo.pdf}
 \caption{Diagrama de Bode: sistema compensado vs sin compensar.}
 \label{fig:bode_comp}
 \end{figure}
@@ -400,7 +397,7 @@ El Bode del sistema compensado es prácticamente idéntico al del sistema sin co
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{rampa_lead.pdf}
+\includegraphics[width=0.68\textwidth]{rampa_lead.pdf}
 \caption{Seguimiento de rampa con el compensador PI. La salida se superpone a la referencia en régimen permanente; el error converge a cero.}
 \label{fig:rampa_lead}
 \end{figure}
@@ -422,7 +419,7 @@ Es decir, $K_v = \PIKv$ y el error en régimen permanente ante rampa es \textbf{
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{rampa_con_integrador.pdf}
+\includegraphics[width=0.68\textwidth]{rampa_con_integrador.pdf}
 \caption{Seguimiento de rampa con el compensador PI de B.b. La referencia y la salida se superponen en régimen permanente; no se requiere modificación adicional.}
 \label{fig:rampa_int}
 \end{figure}
@@ -470,7 +467,7 @@ La Figura~\ref{fig:ej2_nyquist_nom} muestra el diagrama de Nyquist de $G(s)$ con
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.7\textwidth]{ej2_nyquist_nominal.pdf}
+\includegraphics[width=0.56\textwidth]{ej2_nyquist_nominal.pdf}
 \caption{Diagrama de Nyquist del sistema nominal ($B = 0{,}5$).}
 \label{fig:ej2_nyquist_nom}
 \end{figure}
@@ -492,7 +489,7 @@ Se simula el sistema en lazo cerrado ($C(s) = 1$) ante escalón unitario, con $B
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{ej2_falla_sin_comp.pdf}
+\includegraphics[width=0.68\textwidth]{ej2_falla_sin_comp.pdf}
 \caption{Respuesta al escalón con falla en $t = 15$~s (sin compensar). La salida diverge.}
 \label{fig:ej2_falla}
 \end{figure}
@@ -503,7 +500,7 @@ El sistema \textbf{se vuelve inestable} tras la falla: con $B = -0{,}1$, la plan
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{ej2_rlocus_comparativo.pdf}
+\includegraphics[width=0.68\textwidth]{ej2_rlocus_comparativo.pdf}
 \caption{Root Locus: nominal ($B = 0{,}5$, azul) vs falla ($B = -0{,}1$, rojo). Las estrellas marcan polos de LC con $K = 1$.}
 \label{fig:ej2_rlocus}
 \end{figure}
@@ -561,7 +558,7 @@ El diseño usa un bucle iterativo que incrementa el margen de seguridad (en paso
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{ej2_bode_3compensadores.pdf}
+\includegraphics[width=0.68\textwidth]{ej2_bode_3compensadores.pdf}
 \caption{Diagrama de Bode del sistema nominal compensado para los tres valores de PM.}
 \label{fig:ej2_bode}
 \end{figure}
@@ -586,7 +583,7 @@ Se verifica que los márgenes de fase obtenidos coinciden con los objetivos. La 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{ej2_falla_3compensadores.pdf}
+\includegraphics[width=0.68\textwidth]{ej2_falla_3compensadores.pdf}
 \caption{Respuesta al escalón con falla ($B$: 0,5 $\to$ $-0{,}1$ en $t = 15$~s) para los tres compensadores. Sin compensar (línea punteada) diverge.}
 \label{fig:ej2_falla3}
 \end{figure}
@@ -601,7 +598,7 @@ Se verifica que los márgenes de fase obtenidos coinciden con los objetivos. La 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.7\textwidth]{ej2_nyquist_compensado.pdf}
+\includegraphics[width=0.56\textwidth]{ej2_nyquist_compensado.pdf}
 \caption{Nyquist del sistema nominal compensado. El compensador ``aleja'' la curva del punto $(-1, 0)$.}
 \label{fig:ej2_nyquist_comp}
 \end{figure}
