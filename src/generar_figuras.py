@@ -224,7 +224,7 @@ def main():
     ax1.plot(t_ramp, ref_ramp, 'k--', linewidth=1, label='Referencia (rampa)')
     ax1.plot(t_ramp, y_rampa_comp, 'r-', linewidth=2, label='Salida compensada')
     ax1.set_ylabel('$\\theta$ [rad]')
-    ax1.set_title('Seguimiento de rampa — Compensador lead (sin integrador)')
+    ax1.set_title('Seguimiento de rampa — Compensador PI')
     ax1.legend()
     ax1.set_xlim([0, 30])
     error_r = ref_ramp - y_rampa_comp
